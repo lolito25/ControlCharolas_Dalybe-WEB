@@ -1,0 +1,231 @@
+<!-- VISTA: MOVIMIENTOS -->
+<div class="section-header">
+    <h3>Movimientos Recientes</h3>
+    <div class="header-actions">
+        <button class="btn-primary" onclick="Movimientos.mostrarModalCrear()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            📝 Crear Movimiento
+        </button>
+        <button class="btn-secondary" onclick="Movimientos.cargar()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Actualizar
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="movimientosTable">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Establecimiento</th>
+                <th>Entregador</th>
+                <th>Desc G</th>
+                <th>Rec G</th>
+                <th>Desc P</th>
+                <th>Rec P</th>
+                <th>Saldo</th>
+                <th>Verificado</th>
+                <th>Usuario</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="movimientosTableBody">
+            <tr>
+                <td colspan="12" class="loading-text">Cargando movimientos...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL PARA CREAR MOVIMIENTO -->
+<div id="modalCrearMovimiento" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>📝 Crear Nuevo Movimiento</h3>
+            <button class="modal-close" onclick="Movimientos.cerrarModalCrear()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="formCrearMovimiento" onsubmit="Movimientos.guardarMovimiento(event)">
+                
+                <!-- Selección de Ruta -->
+                <div class="form-group">
+                    <label for="rutaMovimiento">🚚 Ruta Activa *</label>
+                    <select id="rutaMovimiento" required onchange="Movimientos.seleccionarRuta()">
+                        <option value="">Seleccione una ruta activa</option>
+                    </select>
+                    <small class="form-hint">Solo se muestran rutas con estado "Iniciada"</small>
+                </div>
+
+                <!-- Información de la Ruta -->
+                <div id="infoRuta" class="info-panel" style="display: none;">
+                    <h4>📋 Información de la Ruta</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Entregador:</label>
+                            <span id="infoEntregador">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Charolas Grandes:</label>
+                            <span id="infoCharolasG">0</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Charolas Pequeñas:</label>
+                            <span id="infoCharolasP">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Búsqueda de Cliente -->
+                <div class="form-group">
+                    <label for="buscarCliente">🔍 Cliente *</label>
+                    <div style="position: relative;">
+                        <input type="text" 
+                               id="buscarCliente" 
+                               placeholder="Buscar por nombre o código..." 
+                               autocomplete="off"
+                               oninput="Movimientos.buscarCliente(this.value)"
+                               required>
+                        <input type="hidden" id="clienteSeleccionado">
+                        <div id="resultadosClientes" class="autocomplete-results"></div>
+                    </div>
+                </div>
+
+                <!-- Información del Cliente -->
+                <div id="infoCliente" class="info-panel" style="display: none;">
+                    <h4>🏪 Información del Cliente</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Código:</label>
+                            <span id="infoClienteCodigo">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Establecimiento:</label>
+                            <span id="infoEstablecimiento">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Vendedor:</label>
+                            <span id="infoVendedor">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHAROLAS GRANDES -->
+                <div class="form-section">
+                    <h4>📦 CHAROLAS GRANDES</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Saldo Anterior Cliente:</label>
+                            <input type="number" id="saldoAnteriorG" readonly value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="descargadasG">Descargadas *</label>
+                            <input type="number" id="descargadasG" min="0" value="0" required oninput="Movimientos.calcularSaldos()">
+                        </div>
+                        <div class="form-group">
+                            <label for="recogidasG">Recogidas *</label>
+                            <input type="number" id="recogidasG" min="0" value="0" required oninput="Movimientos.calcularSaldos()">
+                        </div>
+                    </div>
+
+                    <div class="resultado-preview">
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <label>Saldo Actual Cliente:</label>
+                                <span id="saldoActualG" class="saldo-value">0</span>
+                            </div>
+                            <div class="preview-item">
+                                <label>🚚 Charolas en Ruta después:</label>
+                                <span id="rutaDespuesG" class="saldo-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHAROLAS PEQUEÑAS -->
+                <div class="form-section">
+                    <h4>📦 CHAROLAS PEQUEÑAS</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Saldo Anterior Cliente:</label>
+                            <input type="number" id="saldoAnteriorP" readonly value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="descargadasP">Descargadas *</label>
+                            <input type="number" id="descargadasP" min="0" value="0" required oninput="Movimientos.calcularSaldos()">
+                        </div>
+                        <div class="form-group">
+                            <label for="recogidasP">Recogidas *</label>
+                            <input type="number" id="recogidasP" min="0" value="0" required oninput="Movimientos.calcularSaldos()">
+                        </div>
+                    </div>
+
+                    <div class="resultado-preview">
+                        <div class="preview-grid">
+                            <div class="preview-item">
+                                <label>Saldo Actual Cliente:</label>
+                                <span id="saldoActualP" class="saldo-value">0</span>
+                            </div>
+                            <div class="preview-item">
+                                <label>🚚 Charolas en Ruta después:</label>
+                                <span id="rutaDespuesP" class="saldo-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerta de validación -->
+                <div id="alertaMovimiento" class="alerta-bodega" style="display: none;">
+                    <div class="alerta-icono">⚠️</div>
+                    <div class="alerta-contenido">
+                        <strong>Advertencia:</strong>
+                        <span id="alertaMovimientoMensaje"></span>
+                    </div>
+                </div>
+
+                <!-- Verificado -->
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="verificado">
+                        ✅ Marcar como verificado
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="Movimientos.cerrarModalCrear()">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarMovimiento">💾 Guardar Movimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA VER HISTORIAL DE CLIENTE -->
+<div id="modalHistorialCliente" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>📊 Historial de Movimientos</h3>
+            <button class="modal-close" onclick="Movimientos.cerrarModalHistorial()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="historialClienteContent">
+                <p class="loading-text">Cargando historial...</p>
+            </div>
+        </div>
+    </div>
+</div>

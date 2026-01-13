@@ -1,0 +1,254 @@
+/* =====================================================
+   SISTEMA DE NOTIFICACIONES MOTIVACIONALES
+   Diseño elegante y profesional
+   ===================================================== */
+
+/* ===== NOTIFICACIÓN PRINCIPAL ===== */
+.motivational-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    color: #2c3e50;
+    padding: 20px 25px;
+    border-radius: 12px;
+    border-left: 5px solid #00BFFF;
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.15),
+        0 0 20px rgba(0, 191, 255, 0.1);
+    z-index: 10000;
+    max-width: 400px;
+    min-width: 300px;
+    animation: slideInRight 0.5s ease-out, fadeOut 0.5s ease-in 9.5s;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(500px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(500px);
+        opacity: 0;
+    }
+}
+
+/* ===== ICONO DE LA NOTIFICACIÓN ===== */
+.motivational-notification .icon {
+    font-size: 2em;
+    flex-shrink: 0;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* ===== CONTENIDO DE LA NOTIFICACIÓN ===== */
+.motivational-notification .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.motivational-notification .title {
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #00BFFF;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.motivational-notification .message {
+    font-size: 0.95em;
+    line-height: 1.5;
+    color: #34495e;
+    margin: 0;
+}
+
+.motivational-notification .footer {
+    font-size: 0.75em;
+    color: #7f8c8d;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* ===== BOTÓN DE CERRAR ===== */
+.motivational-notification .close-btn {
+    background: transparent;
+    border: none;
+    color: #95a5a6;
+    font-size: 1.3em;
+    cursor: pointer;
+    padding: 0;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.motivational-notification .close-btn:hover {
+    background: #ecf0f1;
+    color: #2c3e50;
+    transform: rotate(90deg);
+}
+
+/* ===== TIPOS DE NOTIFICACIONES ===== */
+
+/* Notificación General */
+.motivational-notification.type-general {
+    border-left-color: #00BFFF;
+}
+
+.motivational-notification.type-general .title {
+    color: #00BFFF;
+}
+
+/* Notificación Navideña */
+.motivational-notification.type-christmas {
+    border-left-color: #c41e3a;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+}
+
+.motivational-notification.type-christmas .title {
+    color: #c41e3a;
+}
+
+/* Notificación Año Nuevo */
+.motivational-notification.type-newyear {
+    border-left-color: #ffd700;
+    background: linear-gradient(135deg, #fffef5 0%, #fff9e5 100%);
+}
+
+.motivational-notification.type-newyear .title {
+    color: #f39c12;
+}
+
+/* Notificación ZoyPri */
+.motivational-notification.type-zoypri {
+    border-left-color: #9b59b6;
+    background: linear-gradient(135deg, #f8f5ff 0%, #f0e5ff 100%);
+}
+
+.motivational-notification.type-zoypri .title {
+    color: #9b59b6;
+}
+
+.motivational-notification.type-zoypri .message {
+    font-weight: 600;
+    color: #8e44ad;
+}
+
+/* ===== BARRA DE PROGRESO ===== */
+.motivational-notification .progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #00BFFF, #1E90FF);
+    border-radius: 0 0 12px 12px;
+    animation: progressBar 10s linear;
+}
+
+@keyframes progressBar {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+.motivational-notification.type-christmas .progress-bar {
+    background: linear-gradient(90deg, #c41e3a, #e74c3c);
+}
+
+.motivational-notification.type-newyear .progress-bar {
+    background: linear-gradient(90deg, #ffd700, #f39c12);
+}
+
+.motivational-notification.type-zoypri .progress-bar {
+    background: linear-gradient(90deg, #9b59b6, #8e44ad);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .motivational-notification {
+        max-width: 90%;
+        min-width: 280px;
+        top: 10px;
+        right: 10px;
+        padding: 15px 20px;
+        font-size: 0.9em;
+    }
+    
+    .motivational-notification .icon {
+        font-size: 1.5em;
+    }
+}
+
+/* ===== EFECTO HOVER ===== */
+.motivational-notification:hover {
+    box-shadow: 
+        0 15px 40px rgba(0, 0, 0, 0.2),
+        0 0 30px rgba(0, 191, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* ===== ANIMACIÓN DE ENTRADA ALTERNATIVA ===== */
+@keyframes bounceIn {
+    0% {
+        transform: translateX(500px) scale(0.5);
+        opacity: 0;
+    }
+    60% {
+        transform: translateX(-10px) scale(1.05);
+        opacity: 1;
+    }
+    80% {
+        transform: translateX(5px) scale(0.95);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+    }
+}
+
+.motivational-notification.bounce-in {
+    animation: bounceIn 0.6s ease-out, fadeOut 0.5s ease-in 9.5s;
+}
+
+/* ===== MODO OSCURO (OPCIONAL) ===== */
+@media (prefers-color-scheme: dark) {
+    .motivational-notification {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: #ecf0f1;
+    }
+    
+    .motivational-notification .message {
+        color: #bdc3c7;
+    }
+    
+    .motivational-notification .close-btn:hover {
+        background: #34495e;
+        color: #ecf0f1;
+    }
+}

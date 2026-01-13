@@ -1,0 +1,310 @@
+<!-- VISTA: RUTAS -->
+<div class="section-header">
+    <h3>Gestión de Rutas</h3>
+    <button class="btn-primary" onclick="Rutas.mostrarModalNueva()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        🚚 Iniciar Ruta
+    </button>
+</div>
+
+<!-- Filtros de rutas -->
+<div class="rutas-filters">
+    <div class="filter-group">
+        <label for="filtroEstadoRuta">Estado:</label>
+        <select id="filtroEstadoRuta" onchange="Rutas.cargar()">
+            <option value="">Todos</option>
+            <option value="Iniciada">Iniciada</option>
+            <option value="Finalizada">Finalizada</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="filtroFechaRuta">Fecha:</label>
+        <input type="date" id="filtroFechaRuta" onchange="Rutas.cargar()">
+    </div>
+    <button class="btn-secondary" onclick="Rutas.limpiarFiltros()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Limpiar
+    </button>
+</div>
+
+<!-- Tabla de rutas -->
+<div class="table-container">
+    <table class="data-table" id="rutasTable">
+        <thead>
+            <tr>
+                <th>Código Ruta</th>
+                <th>Nombre Ruta</th>
+                <th>Entregador</th>
+                <th>Fecha Inicio</th>
+                <th>Charolas Grandes</th>
+                <th>Charolas Pequeñas</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="rutasTableBody">
+            <tr>
+                <td colspan="8" class="loading-text">Cargando rutas...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL PARA INICIAR RUTA -->
+<div id="modalNuevaRuta" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>🚚 Iniciar Nueva Ruta</h3>
+            <button class="modal-close" onclick="Rutas.cerrarModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Bodega Disponible -->
+            <div class="bodega-disponible">
+                <h4>📦 Disponible en Bodega</h4>
+                <div class="bodega-grid">
+                    <div class="bodega-item">
+                        <label>Charolas Grandes:</label>
+                        <span id="bodegaRutaGrandes" class="bodega-value">0</span>
+                    </div>
+                    <div class="bodega-item">
+                        <label>Charolas Pequeñas:</label>
+                        <span id="bodegaRutaPequenas" class="bodega-value">0</span>
+                    </div>
+                    <div class="bodega-item total">
+                        <label>Total en Bodega:</label>
+                        <span id="bodegaRutaTotal" class="bodega-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="formNuevaRuta">
+                <input type="hidden" id="rutaBodegaGrandes">
+                <input type="hidden" id="rutaBodegaPequenas">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="codigoRuta">Código de Ruta *</label>
+                        <input type="text" id="codigoRuta" required placeholder="Ej: RUTA-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="nombreRuta">Nombre de Ruta *</label>
+                        <input type="text" id="nombreRuta" required placeholder="Ej: Ruta Centro">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="entregadorRuta">Entregador *</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="entregadorRuta" required style="flex: 1;">
+                                <option value="">Seleccione un entregador</option>
+                            </select>
+                            <button type="button" class="btn-secondary" onclick="Rutas.mostrarModalCrearEntregador()" title="Crear nuevo entregador">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                Crear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaInicioRuta">Fecha de Inicio *</label>
+                        <input type="datetime-local" id="fechaInicioRuta" required>
+                    </div>
+                </div>
+
+                <!-- Alerta de validación de bodega -->
+                <div id="alertaBodegaRuta" class="alerta-bodega" style="display: none;">
+                    <div class="alerta-icono">⚠️</div>
+                    <div class="alerta-contenido">
+                        <strong>Advertencia:</strong>
+                        <span id="alertaBodegaRutaMensaje"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="charolasGrandesInicio">Charolas Grandes Iniciales *</label>
+                        <input type="number" id="charolasGrandesInicio" min="0" value="0" required 
+                               oninput="Rutas.validarBodega()">
+                        <small class="form-hint">Cantidad que sale de bodega</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="charolasPequenasInicio">Charolas Pequeñas Iniciales *</label>
+                        <input type="number" id="charolasPequenasInicio" min="0" value="0" required
+                               oninput="Rutas.validarBodega()">
+                        <small class="form-hint">Cantidad que sale de bodega</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacionesRuta">Observaciones</label>
+                    <textarea id="observacionesRuta" rows="3" placeholder="Notas adicionales sobre la ruta..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="Rutas.cerrarModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnIniciarRuta">🚚 Iniciar Ruta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA CREAR ENTREGADOR -->
+<div id="modalCrearEntregador" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>👤 Crear Nuevo Entregador</h3>
+            <button class="modal-close" onclick="Rutas.cerrarModalEntregador()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="formCrearEntregador" onsubmit="Rutas.crearEntregador(event)">
+                <div class="form-group">
+                    <label for="nombreEntregador">Nombre *</label>
+                    <input type="text" id="nombreEntregador" required placeholder="Nombre del entregador">
+                </div>
+                <div class="form-group">
+                    <label for="apellidoEntregador">Apellido *</label>
+                    <input type="text" id="apellidoEntregador" required placeholder="Apellido del entregador">
+                </div>
+                <div class="form-group">
+                    <label for="telefonoEntregador">Teléfono</label>
+                    <input type="tel" id="telefonoEntregador" placeholder="Ej: 3001234567">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="Rutas.cerrarModalEntregador()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Crear Entregador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA FINALIZAR RUTA -->
+<div id="modalFinalizarRuta" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>🏁 Finalizar Ruta</h3>
+            <button class="modal-close" onclick="Rutas.cerrarModalFinalizar()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="formFinalizarRuta" onsubmit="Rutas.finalizarRuta(event)">
+                <input type="hidden" id="finalizarRutaID">
+
+                <!-- Información de la ruta -->
+                <div class="info-panel">
+                    <h4>📊 Información de la Ruta</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Código:</label>
+                            <span id="finalizarCodigoRuta"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Entregador:</label>
+                            <span id="finalizarEntregador"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charolas que salieron -->
+                <div class="saldos-actuales">
+                    <h4>📤 Charolas que SALIERON de Bodega</h4>
+                    <div class="saldos-grid">
+                        <div class="saldo-item">
+                            <label>Charolas Grandes:</label>
+                            <span id="finalizarGrandesSalieron" class="saldo-value">0</span>
+                        </div>
+                        <div class="saldo-item">
+                            <label>Charolas Pequeñas:</label>
+                            <span id="finalizarPequenasSalieron" class="saldo-value">0</span>
+                        </div>
+                        <div class="saldo-item total">
+                            <label>Total:</label>
+                            <span id="finalizarTotalSalieron" class="saldo-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charolas que regresan -->
+                <div class="form-section">
+                    <h4>📥 Charolas que REGRESAN a Bodega</h4>
+                    <p class="form-hint">Ingrese la cantidad de charolas con las que el entregador regresó (pueden ser más si recogió charolas de clientes)</p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="finalizarGrandesRegresan">Charolas Grandes que Regresan *</label>
+                            <input type="number" id="finalizarGrandesRegresan" min="0" value="0" required
+                                   oninput="Rutas.calcularDiferencia()">
+                        </div>
+                        <div class="form-group">
+                            <label for="finalizarPequenasRegresan">Charolas Pequeñas que Regresan *</label>
+                            <input type="number" id="finalizarPequenasRegresan" min="0" value="0" required
+                                   oninput="Rutas.calcularDiferencia()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diferencia calculada -->
+                <div class="resultado-preview">
+                    <h4>📊 Resumen del Movimiento</h4>
+                    <div class="preview-grid">
+                        <div class="preview-item">
+                            <label>Grandes Entregadas/Perdidas:</label>
+                            <span id="finalizarDiferenciaGrandes">0</span>
+                        </div>
+                        <div class="preview-item">
+                            <label>Pequeñas Entregadas/Perdidas:</label>
+                            <span id="finalizarDiferenciaPequenas">0</span>
+                        </div>
+                        <div class="preview-item total">
+                            <label>Total Entregado/Perdido:</label>
+                            <span id="finalizarDiferenciaTotal">0</span>
+                        </div>
+                    </div>
+                    <p class="form-hint" id="finalizarMensaje"></p>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="Rutas.cerrarModalFinalizar()">Cancelar</button>
+                    <button type="submit" class="btn-primary">🏁 Finalizar Ruta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA VER MOVIMIENTOS DE LA RUTA -->
+<div id="modalMovimientosRuta" class="modal">
+    <div class="modal-content modal-large" style="max-width: 1000px;">
+        <div class="modal-header">
+            <h3>📊 Movimientos de Ruta</h3>
+            <button class="modal-close" onclick="Rutas.cerrarModalMovimientos()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="movimientosRutaContent">
+                <p class="loading-text">Cargando movimientos...</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,237 @@
+<!-- VISTA: PROVEEDORES -->
+<div class="section-header">
+    <h3>Gestión de Proveedores</h3>
+    <div class="header-actions">
+        <button class="btn-primary" onclick="Proveedores.mostrarModalNuevo()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Nuevo Proveedor
+        </button>
+        <button class="btn-secondary" onclick="Proveedores.cargar()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Actualizar
+        </button>
+    </div>
+</div>
+
+<!-- Tabla de Proveedores -->
+<div class="table-container">
+    <table class="data-table" id="proveedoresTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Proveedor</th>
+                <th>Producto</th>
+                <th>Saldo Grandes</th>
+                <th>Saldo Pequeñas</th>
+                <th>Total</th>
+                <th>Último Movimiento</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="proveedoresTableBody">
+            <tr>
+                <td colspan="8" class="loading-text">Cargando proveedores...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL: NUEVO PROVEEDOR -->
+<div id="modalNuevoProveedor" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Nuevo Proveedor</h3>
+            <button class="modal-close" onclick="Proveedores.cerrarModalNuevo()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="formNuevoProveedor">
+                <div class="form-group">
+                    <label for="nombreProveedor">Nombre del Proveedor *</label>
+                    <input type="text" id="nombreProveedor" required placeholder="Ej: BIMBO">
+                </div>
+                <div class="form-group">
+                    <label for="productoProveedor">Producto *</label>
+                    <input type="text" id="productoProveedor" required placeholder="Ej: CHAROLAS" value="CHAROLAS">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="Proveedores.cerrarModalNuevo()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Crear Proveedor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: NUEVO MOVIMIENTO -->
+<div id="modalNuevoMovimiento" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Registrar Movimiento - <span id="modalMovimientoProveedor"></span></h3>
+            <button class="modal-close" onclick="Proveedores.cerrarModalMovimiento()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Saldos Actuales del Proveedor -->
+            <div class="saldos-actuales">
+                <h4>📊 Saldos Actuales del Proveedor</h4>
+                <div class="saldos-grid">
+                    <div class="saldo-item">
+                        <label>Charolas Grandes:</label>
+                        <span id="saldoActualGrandes" class="saldo-value">0</span>
+                    </div>
+                    <div class="saldo-item">
+                        <label>Charolas Pequeñas:</label>
+                        <span id="saldoActualPequenas" class="saldo-value">0</span>
+                    </div>
+                    <div class="saldo-item total">
+                        <label>Total:</label>
+                        <span id="saldoActualTotal" class="saldo-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disponible en Bodega -->
+            <div class="bodega-disponible">
+                <h4>📦 Disponible en Bodega</h4>
+                <div class="bodega-grid">
+                    <div class="bodega-item">
+                        <label>Charolas Grandes:</label>
+                        <span id="bodegaDisponibleGrandes" class="bodega-value">0</span>
+                    </div>
+                    <div class="bodega-item">
+                        <label>Charolas Pequeñas:</label>
+                        <span id="bodegaDisponiblePequenas" class="bodega-value">0</span>
+                    </div>
+                    <div class="bodega-item total">
+                        <label>Total en Bodega:</label>
+                        <span id="bodegaDisponibleTotal" class="bodega-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="formNuevoMovimiento">
+                <input type="hidden" id="movProveedorID">
+                <input type="hidden" id="movSaldoAnteriorGrandes">
+                <input type="hidden" id="movSaldoAnteriorPequenas">
+                <input type="hidden" id="movBodegaGrandes">
+                <input type="hidden" id="movBodegaPequenas">
+
+                <div class="form-group">
+                    <label for="tipoMovimiento">Tipo de Movimiento *</label>
+                    <select id="tipoMovimiento" required onchange="Proveedores.cambiarTipoMovimiento()">
+                        <option value="">Seleccione tipo</option>
+                        <option value="entrada">📥 Entrada (Proveedor entrega charolas a bodega)</option>
+                        <option value="salida">📤 Salida (Entregar charolas a clientes desde bodega)</option>
+                    </select>
+                </div>
+
+                <!-- Alerta de validación de bodega -->
+                <div id="alertaBodega" class="alerta-bodega" style="display: none;">
+                    <div class="alerta-icono">⚠️</div>
+                    <div class="alerta-contenido">
+                        <strong>Advertencia:</strong>
+                        <span id="alertaBodegaMensaje"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movGrandesEntrantes">Charolas Grandes Entrantes</label>
+                        <input type="number" id="movGrandesEntrantes" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="movGrandesSalientes">Charolas Grandes Salientes</label>
+                        <input type="number" id="movGrandesSalientes" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movPequenasEntrantes">Charolas Pequeñas Entrantes</label>
+                        <input type="number" id="movPequenasEntrantes" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="movPequenasSalientes">Charolas Pequeñas Salientes</label>
+                        <input type="number" id="movPequenasSalientes" min="0" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="movObservaciones">Observaciones</label>
+                    <textarea id="movObservaciones" rows="3" placeholder="Notas sobre el movimiento..."></textarea>
+                </div>
+
+                <!-- Preview del Resultado -->
+                <div class="resultado-preview">
+                    <h4>📈 Resultado del Movimiento</h4>
+                    <div class="preview-grid">
+                        <div class="preview-item">
+                            <label>Saldo Final Grandes:</label>
+                            <span id="previewGrandes" class="preview-value">0</span>
+                        </div>
+                        <div class="preview-item">
+                            <label>Saldo Final Pequeñas:</label>
+                            <span id="previewPequenas" class="preview-value">0</span>
+                        </div>
+                        <div class="preview-item total">
+                            <label>Total Final:</label>
+                            <span id="previewTotal" class="preview-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="Proveedores.cerrarModalMovimiento()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Registrar Movimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: HISTORIAL DE MOVIMIENTOS -->
+<div id="modalHistorial" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Historial de Movimientos - <span id="modalHistorialProveedor"></span></h3>
+            <button class="modal-close" onclick="Proveedores.cerrarModalHistorial()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="table-container">
+                <table class="data-table" id="historialTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Grandes (+)</th>
+                            <th>Grandes (-)</th>
+                            <th>Pequeñas (+)</th>
+                            <th>Pequeñas (-)</th>
+                            <th>Saldo Final</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historialTableBody">
+                        <tr>
+                            <td colspan="7" class="loading-text">Cargando historial...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

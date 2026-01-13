@@ -1,0 +1,189 @@
+<!-- VISTA: INVENTARIO public/views/inventario.html-->
+<!-- ACTUALIZADO: Columnas Grandes y Pequeñas separadas -->
+
+<!-- ✅ AGREGADO: CSS para nuevas columnas -->
+<style>
+    /* Estilos para las columnas de charolas */
+    .data-table th.col-grandes,
+    .data-table td.col-grandes {
+        background: rgba(33, 150, 243, 0.1);
+        color: #1565c0;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .data-table th.col-pequenas,
+    .data-table td.col-pequenas {
+        background: rgba(233, 30, 99, 0.1);
+        color: #c2185b;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .data-table th.col-total,
+    .data-table td.col-total {
+        background: rgba(76, 175, 80, 0.1);
+        color: #388e3c;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    /* Hover effects */
+    .data-table tbody tr:hover td.col-grandes {
+        background: rgba(33, 150, 243, 0.2);
+    }
+
+    .data-table tbody tr:hover td.col-pequenas {
+        background: rgba(233, 30, 99, 0.2);
+    }
+
+    .data-table tbody tr:hover td.col-total {
+        background: rgba(76, 175, 80, 0.2);
+    }
+</style>
+<!-- ✅ FIN CSS AGREGADO -->
+
+<div class="section-header">
+    <h3>Inventario de Charolas por Cliente</h3>
+    <div class="header-actions">
+        <div class="search-container">
+            <input type="text" 
+                   id="buscarInventario" 
+                   placeholder="🔍 Buscar cliente, código, establecimiento..." 
+                   oninput="Inventario.filtrar(this.value)"
+                   class="search-input">
+            <span id="resultadosCount" class="search-count"></span>
+        </div>
+        <button class="btn-success" onclick="Inventario.mostrarModalNuevoCliente()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Nuevo Cliente
+        </button>
+        <button class="btn-secondary" onclick="Inventario.descargarExcel()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Descargar Excel
+        </button>
+        <button class="btn-primary" onclick="Inventario.cargar()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Actualizar
+        </button>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="inventarioTable">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Cliente</th>
+                <th>Establecimiento</th>
+                <th>Vendedor</th>
+                <th>Municipio</th>
+                <th>Saldo Anterior</th>
+                <th>Descargadas</th>
+                <th>Recogidas</th>
+                <!-- ✅ NUEVAS COLUMNAS -->
+                <th class="col-grandes">🔵 Grandes</th>
+                <th class="col-pequenas">🔴 Pequeñas</th>
+                <!-- ✅ FIN NUEVAS COLUMNAS -->
+                <th class="col-total">Saldo Actual</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="inventarioTableBody">
+            <tr>
+                <!-- ✅ CAMBIO: colspan de 10 a 11 -->
+                <td colspan="12" class="loading-text">Cargando inventario...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL: NUEVO CLIENTE -->
+<div id="modalNuevoCliente" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>➕ Registrar Nuevo Cliente</h3>
+            <button class="modal-close" onclick="Inventario.cerrarModalNuevoCliente()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="formNuevoCliente" onsubmit="Inventario.guardarNuevoCliente(event)">
+                
+                <div class="form-section">
+                    <h4>📋 Información del Cliente</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="codigoCliente">Código Cliente *</label>
+                            <input type="text" id="codigoCliente" required 
+                                   placeholder="Ejemplo: CLI001"
+                                   pattern="[A-Z0-9]+" 
+                                   title="Solo letras mayúsculas y números">
+                            <small class="form-hint">Solo letras mayúsculas y números</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="nombreCliente">Nombre del Cliente *</label>
+                            <input type="text" id="nombreCliente" required 
+                                   placeholder="Nombre completo del cliente">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombreEstablecimiento">Nombre del Establecimiento *</label>
+                            <input type="text" id="nombreEstablecimiento" required 
+                                   placeholder="Nombre del negocio o tienda">
+                        </div>
+                        <div class="form-group">
+                            <label for="vendedor">Vendedor Asignado *</label>
+                            <input type="text" id="vendedor" required 
+                                   placeholder="Nombre del vendedor">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="municipio">Municipio *</label>
+                            <input type="text" id="municipio" required 
+                                   placeholder="Municipio donde se encuentra">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>📦 Saldo Inicial de Charolas</h4>
+                    <p class="form-hint">Ingrese el saldo inicial de charolas que tiene el cliente (opcional, por defecto es 0)</p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="saldoInicialGrandes">🔵 Charolas Grandes</label>
+                            <input type="number" id="saldoInicialGrandes" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="saldoInicialPequenas">🔴 Charolas Pequeñas</label>
+                            <input type="number" id="saldoInicialPequenas" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="Inventario.cerrarModalNuevoCliente()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        💾 Guardar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

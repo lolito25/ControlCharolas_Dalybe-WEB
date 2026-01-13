@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Control de Charolas</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+
+    <!-- Efectos de Nieve -->
+    <link rel="stylesheet" href="/css/snow-effects.css">
+
+    <!-- Sistema de Notificaciones -->
+    <link rel="stylesheet" href="/css/notificaciones.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+                    <rect width="60" height="60" rx="12" fill="url(#gradient1)"/>
+                    <path d="M15 30h30M30 15v30M20 20h20v20H20z" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                    <defs>
+                        <linearGradient id="gradient1" x1="0" y1="0" x2="60" y2="60">
+                            <stop offset="0%" stop-color="#667eea"/>
+                            <stop offset="100%" stop-color="#764ba2"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div class="logo-text">
+                    <h1>Control Charolas</h1>
+                    <p>Sistema de Gestión</p>
+                </div>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                        <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <rect x="14" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <rect x="3" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <rect x="14" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#inventario" class="nav-link" data-section="inventario">
+                        <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 7H4M20 7l-2-4H6L4 7m16 0v11a2 2 0 01-2 2H6a2 2 0 01-2-2V7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span class="nav-text">Inventario</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#movimientos" class="nav-link" data-section="movimientos">
+                        <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M7 16V4M7 4L3 8m4-4l4 4m6 4v12m0-12l4 4m-4-4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span class="nav-text">Movimientos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#bodega" class="nav-link" data-section="bodega">
+                        <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span class="nav-text">Bodega</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#proveedores" class="nav-link" data-section="proveedores">
+                        <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 7h5v13H3V7h5m0 0V5a2 2 0 012-2h4a2 2 0 012 2v2m-8 0h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span class="nav-text">Proveedores</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#rutas" class="nav-link" data-section="rutas">
+                        <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M13 17h-2v-4m-6 4H3V6a1 1 0 011-1h9l3 4h5a1 1 0 011 1v7h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="nav-text">Rutas</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                        <path d="M4 20a8 8 0 0116 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name" id="userName">Usuario</p>
+                    <p class="user-role" id="userRole">Rol</p>
+                </div>
+            </div>
+            <button class="btn-logout" id="btnLogout" title="Cerrar sesión">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5m0 0l-5-5m5 5H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="header-title">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="pageSubtitle">Bienvenido al sistema de control de charolas</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-date">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M3 10h18M8 2v4m8-4v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT WRAPPER - Aquí se cargarán las vistas dinámicamente -->
+        <div class="content-wrapper">
+            <div class="loading-text" style="padding: 40px; text-align: center;">Cargando...</div>
+        </div>
+    </main>
+
+    <!-- BOTÓN FLOTANTE DE SOPORTE WHATSAPP -->
+    <a href="https://wa.me/573232291392?text=Hola,%20necesito%20soporte%20con%20el%20sistema%20de%20Control%20de%20Charolas" 
+       class="whatsapp-support-btn" 
+       target="_blank"
+       title="Contactar soporte por WhatsApp">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 0C7.163 0 0 7.163 0 16c0 2.825.738 5.48 2.028 7.784L.695 30.28l6.698-1.756A15.907 15.907 0 0016 32c8.837 0 16-7.163 16-16S24.837 0 16 0z" fill="#25D366"/>
+            <path d="M25.254 22.473c-.342.964-1.698 1.768-2.776 2.003-.743.157-1.71.283-4.968-.998-4.177-1.643-6.869-5.87-7.076-6.138-.203-.268-1.672-2.227-1.672-4.248 0-2.02 1.058-3.015 1.434-3.427.375-.413.82-.516 1.093-.516.274 0 .547.003.786.014.252.012.59-.096.922.703.341.822 1.164 2.843 1.266 3.048.102.204.171.442.034.71-.136.27-.204.437-.407.675-.204.238-.428.532-.611.714-.204.204-.416.424-.179.83.238.406.1.058 2.152 3.15.404.56.879 1.118 1.421 1.598.543.48 1.008.636 1.367.808.358.171.57.143.78-.086.211-.23.904-1.05 1.144-1.414.24-.364.48-.304.81-.182.332.123 2.103 1.001 2.465 1.183.363.182.603.272.692.424.09.15.09.868-.251 1.832z" fill="#FFF"/>
+        </svg>
+        <span class="support-text">Soporte</span>
+    </a>
+
+    <!-- CARGAR CONTROLADOR PRINCIPAL -->
+    <script src="/js/dashboard-controller.js"></script>
+    <!-- Script de Efectos de Nieve -->
+    <script src="/js/snow-effects.js"></script>
+
+    <!-- Script de Notificaciones -->
+    <script src="/js/notifications.js"></script>
+
+</body>
+</html>

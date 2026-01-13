@@ -1,0 +1,53 @@
+{
+  "name": "control-charolas-web",
+  "version": "1.0.0",
+  "description": "Sistema de Control de Charolas",
+  "main": "server.js",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "pkg . --targets node18-win-x64 --output dist/ControlCharolas.exe"
+  },
+  "keywords": [
+    "control",
+    "charolas",
+    "inventory"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "exceljs": "^4.3.0",
+    "express": "^4.18.2",
+    "express-session": "^1.18.2",
+    "mssql": "^9.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "pkg": {
+    "targets": [
+      "node18-win-x64"
+    ],
+    "assets": [
+      "public/**/*",
+      "routes/**/*",
+      "middleware/**/*",
+      "config/**/*",
+      "views/**/*",
+      ".env",
+      "node_modules/bcryptjs/**/*",
+      "node_modules/cors/**/*"
+    ],
+    "scripts": [
+      "node_modules/bcryptjs/**/*.js",
+      "node_modules/cors/**/*.js"
+    ],
+    "outputPath": "dist"
+  }
+}

@@ -1,0 +1,731 @@
+// ===================================
+// DASHBOARD.JS - Lógica Principal
+// ===================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Verificar sesión
+    checkSession();
+    
+    // Inicializar fecha
+    updateDate();
+    
+    // Cargar datos iniciales
+    loadDashboardStats();
+    
+    // Event Listeners
+    setupNavigationListeners();
+    setupLogoutListener();
+    setupMobileMenu();
+    setupBodegaForm();
+});
+
+// ===================================
+// VERIFICAR SESIÓN
+// ===================================
+async function checkSession() {
+    try {
+        const response = await fetch('/check-session');
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+            window.location.href = '/login.html';
+        } else {
+            document.getElementById('userName').textContent = data.user.username;
+            document.getElementById('userRole').textContent = data.user.rol;
+        }
+    } catch (error) {
+        console.error('Error al verificar sesión:', error);
+        window.location.href = '/login.html';
+    }
+}
+
+// ===================================
+// ACTUALIZAR FECHA
+// ===================================
+function updateDate() {
+    const dateElement = document.getElementById('currentDate');
+    const now = new Date();
+    const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+    dateElement.textContent = now.toLocaleDateString('es-ES', options);
+}
+
+// ===================================
+// NAVEGACIÓN
+// ===================================
+function setupNavigationListeners() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Remover active de todos los links
+            navLinks.forEach(l => l.classList.remove('active'));
+            
+            // Agregar active al link clickeado
+            link.classList.add('active');
+            
+            // Obtener sección
+            const section = link.getAttribute('data-section');
+            
+            // Mostrar sección correspondiente
+            showSection(section);
+            
+            // Cargar datos de la sección
+            loadSectionData(section);
+        });
+    });
+}
+
+function showSection(sectionName) {
+    const sections = document.querySelectorAll('.content-section');
+    sections.forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    const activeSection = document.getElementById(`${sectionName}-section`);
+    if (activeSection) {
+        activeSection.classList.add('active');
+    }
+    
+    // Actualizar título
+    const titles = {
+        'dashboard': 'Dashboard',
+        'inventario': 'Inventario de Charolas',
+        'movimientos': 'Movimientos',
+        'bodega': 'Control de Bodega',
+        'proveedores': 'Proveedores',
+        'rutas': 'Gestión de Rutas'
+    };
+    
+    const subtitles = {
+        'dashboard': 'Resumen general del sistema',
+        'inventario': 'Control de charolas por cliente',
+        'movimientos': 'Historial de movimientos',
+        'bodega': 'Gestión de inventario en bodega',
+        'proveedores': 'Gestión de proveedores',
+        'rutas': 'Control y seguimiento de rutas de entrega'
+    };
+    
+    document.getElementById('pageTitle').textContent = titles[sectionName];
+    document.getElementById('pageSubtitle').textContent = subtitles[sectionName];
+}
+
+function loadSectionData(section) {
+    switch(section) {
+        case 'dashboard':
+            loadDashboardStats();
+            break;
+        case 'inventario':
+            loadInventario();
+            break;
+        case 'movimientos':
+            loadMovimientos();
+            break;
+        case 'bodega':
+            loadBodega();
+            break;
+        case 'proveedores':
+            loadProveedores();
+            break;
+        case 'rutas':
+            loadRutas();
+            loadEntregadores();
+            break;
+    }
+}
+
+// ===================================
+// CARGAR ESTADÍSTICAS DEL DASHBOARD
+// ===================================
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/estadisticas');
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('totalClientes').textContent = result.data.totalClientes;
+            document.getElementById('movimientosHoy').textContent = result.data.movimientosHoy;
+            document.getElementById('totalProveedores').textContent = result.data.totalProveedores;
+            document.getElementById('charolasBodega').textContent = result.data.charolasBodega;
+        }
+        
+        // Cargar actividad reciente
+        loadRecentActivity();
+        
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+    }
+}
+
+async function loadRecentActivity() {
+    try {
+        const response = await fetch('/api/movimientos');
+        const result = await response.json();
+        
+        const activityList = document.getElementById('activityList');
+        
+        if (result.success && result.data.length > 0) {
+            const html = result.data.slice(0, 5).map(mov => {
+                const fecha = new Date(mov.FechaMovimiento);
+                const fechaFormato = fecha.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            📦
+                        </div>
+                        <div class="activity-details">
+                            <h4>${mov.NombreCliente} - ${mov.NombreEstablecimiento}</h4>
+                            <p>Descargadas: ${mov.CantidadDescargada} | Recogidas: ${mov.CantidadRecogida} | ${fechaFormato}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            activityList.innerHTML = html;
+        } else {
+            activityList.innerHTML = '<p class="loading-text">No hay actividad reciente</p>';
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar actividad:', error);
+    }
+}
+
+// ===================================
+// CARGAR INVENTARIO
+// ===================================
+async function loadInventario() {
+    try {
+        const tbody = document.getElementById('inventarioTableBody');
+        tbody.innerHTML = '<tr><td colspan="9" class="loading-text">Cargando...</td></tr>';
+        
+        const response = await fetch('/api/inventario');
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+            const html = result.data.map(item => `
+                <tr>
+                    <td>${item.CodigoCliente}</td>
+                    <td>${item.NombreCliente}</td>
+                    <td>${item.NombreEstablecimiento}</td>
+                    <td>${item.Vendedor}</td>
+                    <td>${item.Municipio}</td>
+                    <td>${item.SaldoControlAnterior}</td>
+                    <td>${item.CharolasDescargadas}</td>
+                    <td>${item.CharolasRecogidas}</td>
+                    <td><strong>${item.CharolasActuales}</strong></td>
+                </tr>
+            `).join('');
+            
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="9" class="loading-text">No hay datos disponibles</td></tr>';
+        }
+    } catch (error) {
+        console.error('Error al cargar inventario:', error);
+        document.getElementById('inventarioTableBody').innerHTML = 
+            '<tr><td colspan="9" class="loading-text" style="color: var(--error-color);">Error al cargar datos</td></tr>';
+    }
+}
+
+// ===================================
+// CARGAR MOVIMIENTOS
+// ===================================
+async function loadMovimientos() {
+    try {
+        const tbody = document.getElementById('movimientosTableBody');
+        tbody.innerHTML = '<tr><td colspan="9" class="loading-text">Cargando...</td></tr>';
+        
+        const response = await fetch('/api/movimientos');
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+            const html = result.data.map(mov => {
+                const fecha = new Date(mov.FechaMovimiento);
+                const fechaFormato = fecha.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                const verificado = mov.Verificado ? 
+                    '<span style="color: var(--success-color);">✓ Sí</span>' : 
+                    '<span style="color: var(--error-color);">✗ No</span>';
+                
+                return `
+                    <tr>
+                        <td>${fechaFormato}</td>
+                        <td>${mov.NombreCliente}</td>
+                        <td>${mov.NombreEstablecimiento}</td>
+                        <td>${mov.CantidadDescargada}</td>
+                        <td>${mov.CantidadRecogida}</td>
+                        <td><strong>${mov.SaldoReportado}</strong></td>
+                        <td>${mov.DiferenciaCharolas}</td>
+                        <td>${verificado}</td>
+                        <td>${mov.UsuarioRegistro}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="9" class="loading-text">No hay movimientos disponibles</td></tr>';
+        }
+    } catch (error) {
+        console.error('Error al cargar movimientos:', error);
+        document.getElementById('movimientosTableBody').innerHTML = 
+            '<tr><td colspan="9" class="loading-text" style="color: var(--error-color);">Error al cargar datos</td></tr>';
+    }
+}
+
+// ===================================
+// CARGAR BODEGA
+// ===================================
+async function loadBodega() {
+    try {
+        const response = await fetch('/api/bodega');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const data = result.data;
+            
+            document.getElementById('bodegaGrandes').textContent = data.CharolasGrandesBodega || 0;
+            document.getElementById('bodegaPequenas').textContent = data.CharolasPequenasBodega || 0;
+            document.getElementById('bodegaTotal').textContent = data.TotalCharolasBodega || 0;
+            
+            if (data.FechaActualizacion) {
+                const fecha = new Date(data.FechaActualizacion);
+                document.getElementById('bodegaFecha').textContent = fecha.toLocaleString('es-ES');
+            }
+            
+            document.getElementById('bodegaUsuario').textContent = data.UsuarioActualizacion || '-';
+            document.getElementById('bodegaNotas').textContent = data.Notas || 'Sin notas';
+            
+            // Actualizar inputs del formulario
+            document.getElementById('inputGrandes').value = data.CharolasGrandesBodega || 0;
+            document.getElementById('inputPequenas').value = data.CharolasPequenasBodega || 0;
+        }
+    } catch (error) {
+        console.error('Error al cargar bodega:', error);
+    }
+}
+
+// ===================================
+// SETUP FORMULARIO BODEGA
+// ===================================
+function setupBodegaForm() {
+    const form = document.getElementById('bodegaForm');
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const charolasGrandes = parseInt(document.getElementById('inputGrandes').value);
+        const charolasPequenas = parseInt(document.getElementById('inputPequenas').value);
+        const notas = document.getElementById('inputNotas').value;
+        
+        try {
+            const response = await fetch('/api/bodega/actualizar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    charolasGrandes,
+                    charolasPequenas,
+                    notas
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Inventario de bodega actualizado correctamente');
+                loadBodega();
+                document.getElementById('inputNotas').value = '';
+            } else {
+                alert('❌ Error al actualizar bodega');
+            }
+        } catch (error) {
+            console.error('Error al actualizar bodega:', error);
+            alert('❌ Error de conexión');
+        }
+    });
+}
+
+// ===================================
+// CARGAR PROVEEDORES
+// ===================================
+async function loadProveedores() {
+    try {
+        const tbody = document.getElementById('proveedoresTableBody');
+        tbody.innerHTML = '<tr><td colspan="6" class="loading-text">Cargando...</td></tr>';
+        
+        const response = await fetch('/api/proveedores');
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+            const html = result.data.map(prov => {
+                let fechaFormato = '-';
+                if (prov.UltimoMovimiento) {
+                    const fecha = new Date(prov.UltimoMovimiento);
+                    fechaFormato = fecha.toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                }
+                
+                return `
+                    <tr>
+                        <td>${prov.ProveedorID}</td>
+                        <td><strong>${prov.NombreProveedor}</strong></td>
+                        <td>${prov.Producto}</td>
+                        <td>${prov.SaldoFinalGrandes}</td>
+                        <td>${prov.SaldoFinalPequenas}</td>
+                        <td>${fechaFormato}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" class="loading-text">No hay proveedores disponibles</td></tr>';
+        }
+    } catch (error) {
+        console.error('Error al cargar proveedores:', error);
+        document.getElementById('proveedoresTableBody').innerHTML = 
+            '<tr><td colspan="6" class="loading-text" style="color: var(--error-color);">Error al cargar datos</td></tr>';
+    }
+}
+
+// ===================================
+// LOGOUT
+// ===================================
+function setupLogoutListener() {
+    const btnLogout = document.getElementById('btnLogout');
+    
+    btnLogout.addEventListener('click', async () => {
+        if (confirm('¿Estás seguro de cerrar sesión?')) {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                window.location.href = '/login.html';
+            }
+        }
+    });
+}
+
+// ===================================
+// MENÚ MÓVIL
+// ===================================
+function setupMobileMenu() {
+    const mobileToggle = document.getElementById('mobileMenuToggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    }
+    
+    // Cerrar sidebar al hacer clic en un enlace (móvil)
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+    });
+}
+
+// ===================================
+// FUNCIONES GLOBALES
+// ===================================
+window.loadInventario = loadInventario;
+window.loadMovimientos = loadMovimientos;
+window.loadBodega = loadBodega;
+window.loadProveedores = loadProveedores;
+
+// ===================================
+// GESTIÓN DE RUTAS
+// ===================================
+
+// Cargar lista de rutas
+async function loadRutas() {
+    try {
+        const tbody = document.getElementById('rutasTableBody');
+        tbody.innerHTML = '<tr><td colspan="8" class="loading-text">Cargando...</td></tr>';
+        
+        // Obtener filtros
+        const estadoFiltro = document.getElementById('filtroEstadoRuta').value;
+        const fechaFiltro = document.getElementById('filtroFechaRuta').value;
+        
+        // Construir query params
+        let queryParams = new URLSearchParams();
+        if (estadoFiltro) queryParams.append('estado', estadoFiltro);
+        if (fechaFiltro) queryParams.append('fecha', fechaFiltro);
+        
+        const response = await fetch(`/api/rutas?${queryParams}`);
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+            const html = result.data.map(ruta => {
+                const fecha = new Date(ruta.FechaInicio);
+                const fechaFormato = fecha.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                let estadoBadge = '';
+                if (ruta.EstadoRuta === 'Iniciada') {
+                    estadoBadge = '<span class="badge iniciada">Iniciada</span>';
+                } else if (ruta.EstadoRuta === 'En Progreso') {
+                    estadoBadge = '<span class="badge en-progreso">En Progreso</span>';
+                } else if (ruta.EstadoRuta === 'Finalizada') {
+                    estadoBadge = '<span class="badge finalizada">Finalizada</span>';
+                }
+                
+                return `
+                    <tr>
+                        <td><strong>${ruta.CodigoRuta}</strong></td>
+                        <td>${ruta.NombreRuta}</td>
+                        <td>${ruta.EntregadorNombre || ruta.EntregadorID}</td>
+                        <td>${fechaFormato}</td>
+                        <td>${ruta.CharolasGrandesInicio}</td>
+                        <td>${ruta.CharolasPequenasInicio}</td>
+                        <td>${estadoBadge}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-action view" onclick="verDetalleRuta(${ruta.InicioRutaID})" title="Ver detalle">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" fill="currentColor"/>
+                                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </button>
+                                <button class="btn-action edit" onclick="editarRuta(${ruta.InicioRutaID})" title="Editar">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button class="btn-action delete" onclick="eliminarRuta(${ruta.InicioRutaID})" title="Eliminar">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="loading-text">No hay rutas disponibles</td></tr>';
+        }
+    } catch (error) {
+        console.error('Error al cargar rutas:', error);
+        document.getElementById('rutasTableBody').innerHTML = 
+            '<tr><td colspan="8" class="loading-text" style="color: var(--error-color);">Error al cargar datos</td></tr>';
+    }
+}
+
+// Cargar entregadores para el select
+async function loadEntregadores() {
+    try {
+        const response = await fetch('/api/entregadores');
+        const result = await response.json();
+        
+        const select = document.getElementById('entregadorRuta');
+        select.innerHTML = '<option value="">Seleccione un entregador</option>';
+        
+        if (result.success && result.data.length > 0) {
+            result.data.forEach(entregador => {
+                const option = document.createElement('option');
+                option.value = entregador.Codigo || entregador.EntregadorID;
+                option.textContent = `${entregador.Nombre} ${entregador.Apellido || ''}`.trim();
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar entregadores:', error);
+    }
+}
+
+// Mostrar modal de nueva ruta
+function showNuevaRutaModal() {
+    const modal = document.getElementById('modalNuevaRuta');
+    modal.classList.add('active');
+    
+    // Establecer fecha y hora actual
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(now - offset).toISOString().slice(0, 16);
+    document.getElementById('fechaInicioRuta').value = localISOTime;
+    
+    // Setup form submit
+    const form = document.getElementById('formNuevaRuta');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        await crearNuevaRuta();
+    };
+}
+
+// Cerrar modal
+function closeNuevaRutaModal() {
+    const modal = document.getElementById('modalNuevaRuta');
+    modal.classList.remove('active');
+    document.getElementById('formNuevaRuta').reset();
+}
+
+// Crear nueva ruta
+async function crearNuevaRuta() {
+    try {
+        const formData = {
+            codigoRuta: document.getElementById('codigoRuta').value,
+            nombreRuta: document.getElementById('nombreRuta').value,
+            entregadorID: document.getElementById('entregadorRuta').value,
+            fechaInicio: document.getElementById('fechaInicioRuta').value,
+            charolasGrandesInicio: parseInt(document.getElementById('charolasGrandesInicio').value),
+            charolasPequenasInicio: parseInt(document.getElementById('charolasPequenasInicio').value),
+            observaciones: document.getElementById('observacionesRuta').value
+        };
+        
+        const response = await fetch('/api/rutas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Ruta creada exitosamente');
+            closeNuevaRutaModal();
+            loadRutas();
+        } else {
+            alert('❌ Error al crear ruta: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error al crear ruta:', error);
+        alert('❌ Error de conexión');
+    }
+}
+
+// Ver detalle de ruta
+async function verDetalleRuta(rutaId) {
+    try {
+        const response = await fetch(`/api/rutas/${rutaId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const ruta = result.data;
+            const fecha = new Date(ruta.FechaInicio);
+            
+            let mensaje = `
+═══════════════════════════════════════
+      DETALLE DE RUTA
+═══════════════════════════════════════
+
+📋 Código: ${ruta.CodigoRuta}
+📍 Nombre: ${ruta.NombreRuta}
+👤 Entregador: ${ruta.EntregadorNombre || ruta.EntregadorID}
+📅 Fecha Inicio: ${fecha.toLocaleString('es-ES')}
+
+📦 CHAROLAS INICIALES:
+   • Grandes: ${ruta.CharolasGrandesInicio}
+   • Pequeñas: ${ruta.CharolasPequenasInicio}
+
+📊 Estado: ${ruta.EstadoRuta}
+👨‍💼 Registrado por: ${ruta.UsuarioRegistro}
+
+💬 Observaciones:
+${ruta.Observaciones || 'Sin observaciones'}
+
+═══════════════════════════════════════
+            `;
+            
+            alert(mensaje);
+        }
+    } catch (error) {
+        console.error('Error al ver detalle:', error);
+        alert('❌ Error al cargar detalle de la ruta');
+    }
+}
+
+// Editar ruta
+function editarRuta(rutaId) {
+    alert('Función de edición en desarrollo. ID: ' + rutaId);
+    // TODO: Implementar modal de edición
+}
+
+// Eliminar ruta
+async function eliminarRuta(rutaId) {
+    if (!confirm('¿Estás seguro de eliminar esta ruta?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/rutas/${rutaId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Ruta eliminada correctamente');
+            loadRutas();
+        } else {
+            alert('❌ Error al eliminar ruta: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Error al eliminar ruta:', error);
+        alert('❌ Error de conexión');
+    }
+}
+
+// Limpiar filtros
+function limpiarFiltrosRutas() {
+    document.getElementById('filtroEstadoRuta').value = '';
+    document.getElementById('filtroFechaRuta').value = '';
+    loadRutas();
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('modalNuevaRuta');
+    if (event.target === modal) {
+        closeNuevaRutaModal();
+    }
+}
+
+// Exportar funciones globales de rutas
+window.loadRutas = loadRutas;
+window.showNuevaRutaModal = showNuevaRutaModal;
+window.closeNuevaRutaModal = closeNuevaRutaModal;
+window.verDetalleRuta = verDetalleRuta;
+window.editarRuta = editarRuta;
+window.eliminarRuta = eliminarRuta;
+window.limpiarFiltrosRutas = limpiarFiltrosRutas;

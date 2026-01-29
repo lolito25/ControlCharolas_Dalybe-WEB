@@ -49,6 +49,8 @@ router.get('/inventario', async (req, res) => {
                 SaldoControlAnterior,
                 CharolasDescargadas,
                 CharolasRecogidas,
+                CharolasGrandes,
+                CharolasPequenas,
                 CharolasActuales
             FROM vw_InventarioCharolas
             ORDER BY NombreCliente
@@ -156,11 +158,11 @@ router.post('/clientes', async (req, res) => {
                             @codigo,
                             DATEADD(HOUR, -5, GETUTCDATE()),
                             0,
-                            @saldoG,
+                            0,
                             0,
                             @saldoG,
                             0,
-                            @saldoP,
+                            0,
                             0,
                             @saldoP,
                             1,

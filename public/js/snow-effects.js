@@ -1,6 +1,7 @@
 // =====================================================
 // EFECTOS VISUALES NAVIDEÑOS - SOLO NIEVE Y DECORACIONES
 // Sin notificaciones, sin cambios de colores
+// public/js/snow-effects.js
 // =====================================================
 
 // ===== CONFIGURACIÓN =====

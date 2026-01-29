@@ -1,5 +1,6 @@
 // ===================================
 // LOGIN.JS - Lógica de Autenticación
+// public/js/login.js
 // ===================================
 
 document.addEventListener('DOMContentLoaded', () => {

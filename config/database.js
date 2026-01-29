@@ -38,7 +38,7 @@ if (process.pkg) {
 // Configuración de la base de datos
 const config = {
     //server: process.env.DB_SERVER || 'DGDARK\\SQL2022',
-    server: process.env.DB_SERVER || 'PC-MP1NCG33\\SQL2022',
+    server: process.env.DB_SERVER || 'PRIGAMERR\\DEVELOPER',
     database: process.env.DB_DATABASE || 'ControlCharolas',
     user: process.env.DB_USER || 'sa',
     password: process.env.DB_PASSWORD || '147896321',

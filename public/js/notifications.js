@@ -1,6 +1,7 @@
 // =====================================================
 // SISTEMA DE NOTIFICACIONES MOTIVACIONALES
 // Con todas las frases personalizadas
+// public/js/notifications.js
 // =====================================================
 
 // ===== CONFIGURACIÓN =====

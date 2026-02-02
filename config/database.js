@@ -1,7 +1,3 @@
-// =====================================================
-// ARCHIVO: config/database.js (VERSIÓN PARA EJECUTABLE)
-// Este archivo debe reemplazar el database.js original
-// =====================================================
 
 const sql = require('mssql');
 const path = require('path');
@@ -35,10 +31,69 @@ if (process.pkg) {
     require('dotenv').config();
 }
 
+// =====================================================
+// PARSEAR DB_SERVER para separar servidor y puerto
+// =====================================================
+function parseServerString(serverString) {
+    if (!serverString) {
+        return { server: 'localhost', port: undefined, instanceName: undefined };
+    }
+
+    console.log('🔍 Parseando DB_SERVER:', serverString);
+
+    // Verificar si contiene coma (formato: SERVIDOR,PUERTO)
+    if (serverString.includes(',')) {
+        const parts = serverString.split(',');
+        const serverPart = parts[0].trim();
+        const port = parseInt(parts[1].trim());
+        
+        // Verificar si el serverPart tiene instancia (contiene \)
+        let server = serverPart;
+        let instanceName = undefined;
+        
+        if (serverPart.includes('\\')) {
+            const instanceParts = serverPart.split('\\');
+            server = instanceParts[0].trim();
+            instanceName = instanceParts[1].trim();
+        }
+        
+        console.log('   ✅ Formato: SERVIDOR,PUERTO');
+        console.log('   Servidor:', server);
+        console.log('   Puerto:', port);
+        if (instanceName) {
+            console.log('   Instancia:', instanceName, '(ignorada cuando se usa puerto explícito)');
+        }
+        
+        return { server, port, instanceName: undefined };
+    }
+    
+    // Verificar si contiene instancia (formato: SERVIDOR\INSTANCIA)
+    if (serverString.includes('\\')) {
+        const parts = serverString.split('\\');
+        const server = parts[0].trim();
+        const instanceName = parts[1].trim();
+        
+        console.log('   ✅ Formato: SERVIDOR\\INSTANCIA');
+        console.log('   Servidor:', server);
+        console.log('   Instancia:', instanceName);
+        console.log('   Puerto: (dinámico vía SQL Browser)');
+        
+        return { server, port: undefined, instanceName };
+    }
+    
+    // Formato simple: solo SERVIDOR
+    console.log('   ✅ Formato: SERVIDOR (sin instancia)');
+    console.log('   Servidor:', serverString);
+    console.log('   Puerto: 1433 (por defecto)');
+    
+    return { server: serverString, port: undefined, instanceName: undefined };
+}
+
+const serverConfig = parseServerString(process.env.DB_SERVER || 'DGDARK\\SQL2022');
+
 // Configuración de la base de datos
 const config = {
-    //server: process.env.DB_SERVER || 'DGDARK\\SQL2022',
-    server: process.env.DB_SERVER || 'PRIGAMERR\\DEVELOPER',
+    server: serverConfig.server,
     database: process.env.DB_DATABASE || 'ControlCharolas',
     user: process.env.DB_USER || 'sa',
     password: process.env.DB_PASSWORD || '147896321',
@@ -56,9 +111,27 @@ const config = {
     }
 };
 
+// Agregar puerto solo si fue especificado explícitamente
+if (serverConfig.port) {
+    config.port = serverConfig.port;
+    console.log('   🔌 Puerto explícito configurado:', config.port);
+}
+
+// Agregar instanceName solo si existe y NO hay puerto explícito
+if (serverConfig.instanceName && !serverConfig.port) {
+    config.options.instanceName = serverConfig.instanceName;
+    console.log('   🏢 Instancia configurada:', serverConfig.instanceName);
+}
+
 // Validar configuración
-console.log('🔧 Configuración de BD:');
+console.log('\n🔧 Configuración final de BD:');
 console.log('   Server:', config.server);
+if (config.port) {
+    console.log('   Port:', config.port);
+}
+if (config.options.instanceName) {
+    console.log('   Instance:', config.options.instanceName);
+}
 console.log('   Database:', config.database);
 console.log('   User:', config.user || '(Windows Auth)');
 console.log('   Encrypt:', config.options.encrypt);
@@ -76,7 +149,7 @@ let pool;
 async function getConnection() {
     try {
         if (!pool) {
-            console.log('🔄 Creando pool de conexiones...');
+            console.log('\n🔄 Creando pool de conexiones...');
             pool = await sql.connect(config);
             console.log('✅ Pool de conexiones creado');
         }
@@ -103,7 +176,7 @@ async function closeConnection() {
 // Probar conexión al iniciar
 async function testConnection() {
     try {
-        console.log('🔄 Probando conexión a la base de datos...');
+        console.log('\n🔄 Probando conexión a la base de datos...');
         const connection = await getConnection();
         const result = await connection.request().query('SELECT DB_NAME() as dbName, GETDATE() as serverDate');
         console.log('✅ Conexión a SQL Server establecida correctamente');
@@ -113,9 +186,26 @@ async function testConnection() {
         return true;
     } catch (error) {
         console.error('❌ Prueba de conexión fallida:', error.message);
-        console.log('⚠️  No se pudo conectar a la base de datos');
+        console.log('\n⚠️  No se pudo conectar a la base de datos');
         console.log('⚠️  Verifica tu archivo .env y la configuración de SQL Server');
         console.log('⚠️  El servidor continuará, pero las funciones de BD no estarán disponibles');
+        
+        // Mostrar sugerencias según el error
+        if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
+            console.log('\n💡 SUGERENCIA:');
+            console.log('   El servidor no pudo ser encontrado.');
+            console.log('   Verifica que DB_SERVER en .env sea correcto.');
+        } else if (error.message.includes('Port for')) {
+            console.log('\n💡 SUGERENCIA:');
+            console.log('   No se pudo encontrar el puerto de la instancia.');
+            console.log('   Verifica que SQL Server Browser esté corriendo:');
+            console.log('   net start SQLBrowser');
+        } else if (error.message.includes('Login failed')) {
+            console.log('\n💡 SUGERENCIA:');
+            console.log('   Las credenciales son incorrectas.');
+            console.log('   Verifica DB_USER y DB_PASSWORD en .env');
+        }
+        
         return false;
     }
 }
